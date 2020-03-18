@@ -10,7 +10,6 @@
 #include <Ticker.h>
 
 #include "InetWeather.h"
-#include "TempSensor.h"
 
 
 static const int GPIO_DHT_DATA = 5;
@@ -27,7 +26,6 @@ static const int TEMP_ERROR = 0xFFFF;
 
 static MDNSResponder mdns;
 
-static TempSensor tempSensor(Serial, DHT11, GPIO_DHT_DATA, GPIO_DHT_3V, GPIO_DHT_GND);
 static InetWeather inetWeather(Serial);
 static Print& logger = Serial;
 
@@ -41,16 +39,11 @@ static void initLcd();
 static void initLed();
 
 static void drawSplashscreen();
-static void showLocalTemp();
-static void showExternalTemp();
-static void showTempScreen(const char* headline1, int temp1, const char* line3 = nullptr, const char* line4 = nullptr);
+static void showCountry(int countryCode);
 
-
-static void updateRect();
+static void animateProgressBar();
 static void flipLed();
 
-static bool isTempValid(float temp);
-static bool isHumValid(float hum);
 
 void setup(void)
 {
@@ -59,7 +52,6 @@ void setup(void)
 
   initLcd();
   initLed();
-  tempSensor.Init();
   initWifi();
   inetWeather.init();
   drawSplashscreen();
@@ -72,12 +64,10 @@ void loop(void)
   {
     checkWifi();
 
-    tft.setRotation(rot++);
-    showLocalTemp();
-    updateRect();
-    tft.setRotation(rot++);
-    showExternalTemp();
-    updateRect();
+    showCountry(0);
+    animateProgressBar();
+    showCountry(1);
+    animateProgressBar();
   }
 }
 
@@ -86,7 +76,7 @@ void initLcd()
   logger.printf("initLcd()");
   tft.init();
   tft.fillScreen(TFT_LIGHTGREY);
-  tft.setRotation(0);
+  tft.setRotation(1);
   tft.setTextSize(1);
 
   logger.printf("TFT_WIDTH: %d\n", TFT_WIDTH);
@@ -129,7 +119,6 @@ void initWifi()
 {
   logger.println(__PRETTY_FUNCTION__);
   WiFi.mode(WIFI_STA);
-  wifiMulti.addAP("nowaki_Wifi", "knowak123");
   wifiMulti.addAP("gacoperek", "fedjp5cwcaZ6");
 }
 
@@ -172,7 +161,7 @@ void flipLed()
 }
 
 
-void updateRect()
+void animateProgressBar()
 {
   for (uint32_t color : {TFT_RED, TFT_GREEN, TFT_BLUE, TFT_NAVY})
   {
@@ -185,82 +174,34 @@ void updateRect()
   }
 }
 
-static bool isTempValid(float temp)
-{
-  return ((temp > -50.0) && (temp < 50.0));
-}
-
-static bool isHumValid(float hum)
-{
-  return ((hum > 0.0) && (hum < 100.0));  
-}
-
-static void showTempScreen(uint32_t bgColor, const char* headline, int temp, const char* line3 = nullptr, const char* line4 = nullptr)
+static void showCountryScreen(uint32_t bgColor, const char* countryName, int infected, int cured)
 {
   tft.fillScreen(bgColor);
-  tft.setTextColor(TFT_DARKGREY, bgColor);  
+  tft.setTextColor(TFT_BLACK, bgColor);  
   tft.setCursor(0, 0, 4);
-  tft.println(headline);
+  tft.println(countryName);
 
   tft.setTextColor(TFT_BLACK, bgColor);  
-  tft.setTextFont(7);
+  tft.setTextFont(infected > 9999 ? 4 : 7);
 
-  if (temp == TEMP_ERROR)
-  {
+  if (infected < 0)
     tft.print("...");
-  }
   else
-  {
-    tft.print(temp);
-  }
+    tft.print(infected);
 
-  tft.setTextFont(4);
-  tft.print("  C");
-
-  if (line3)
-  {
-    tft.setTextColor(TFT_DARKGREY, bgColor);
-    tft.setCursor(0, 78, 4);
-    tft.println(line3);
-  }
-
-  if (line4)
-  {
-    tft.setTextColor(TFT_BLACK, bgColor);
-    tft.print(line4);
-  }
+  tft.setTextFont(6);
+  tft.setTextColor(TFT_DARKGREEN, bgColor);
+  tft.setCursor(0, 82, 4);
+  if (infected < 0)
+    tft.print("...");
+  else
+    tft.print(cured);
 }
 
-static void showLocalTemp()
+static void showCountry(int country)
 {
-  //LOG("showLocalTemp()");
-
-  static float oldTemp = TEMP_ERROR;
-  static float oldHum;
-
-  float temp = tempSensor.readTemp();
-  float hum = tempSensor.readHum();
-
-  //LOG("Temp:");
-  //LOG(temp);
-  //LOG("Hum:");
-  //LOG(hum);
-
-  temp = round(temp);
-  hum = round(hum);
-
-  if ((isTempValid(temp)) && (isHumValid(hum)))
-  {
-    oldTemp = temp;
-    oldHum = hum;
-  }
-  char tbs[16];
-  sprintf(tbs, "    %d %%", round(oldHum));
-  showTempScreen(TFT_ORANGE, "Temp", (int)oldTemp, "Wilgotnosc", tbs);
-}
-
-static void showExternalTemp()
-{
-  //LOG("showExternalTemp()");
-  showTempScreen(TFT_MAROON, "Temp zew.", inetWeather.getTemp(), "Sonina");  
+  if (country == 1)
+    showCountryScreen(TFT_WHITE, "Poland", 238, 13);
+  else
+    showCountryScreen(TFT_WHITE, "Italy", 31506, 2941);
 }

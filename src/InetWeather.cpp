@@ -50,7 +50,7 @@ void InetWeather::checkValidity()
 void InetWeather::fetchWeather()
 {
   m_logger.printf("m_uriBuffer: %d\n", sizeof(m_uriBuffer));
-  m_logger.printf("YAHOO_WEATHER_URI: %d\n", std::strlen(YAHOO_WEATHER_URI));
+  m_logger.printf("YYYYYYYAHOO_WEATHER_URI: %d\n", std::strlen(YAHOO_WEATHER_URI));
 
   m_logger.println(__func__);
 
