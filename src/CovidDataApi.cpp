@@ -1,4 +1,4 @@
-#include "InetWeather.h"
+#include "CovidDataApi.h"
 #include "UrlEncode.h"
 
 #include <ESP8266HTTPClient.h>
@@ -13,7 +13,7 @@ struct JsonContainer
   DynamicJsonDocument buf;
 };
 
-InetWeather::InetWeather(Print& logger)
+CovidDataApi::CovidDataApi(Print& logger)
 : m_logger(logger),
   m_httpClient(new HTTPClient()),
   m_jsonContainer(new JsonContainer(JSON_SIZE)),
@@ -22,9 +22,9 @@ InetWeather::InetWeather(Print& logger)
 {
 }
 
-InetWeather::~InetWeather() = default;
+CovidDataApi::~CovidDataApi() = default;
 
-void InetWeather::init()
+void CovidDataApi::init()
 {
   m_httpClient->setTimeout(2000);
   m_httpClient->setReuse(true);
@@ -32,14 +32,7 @@ void InetWeather::init()
   prepareUri();
 }
 
-int InetWeather::getTemp()
-{
-  m_logger.println(__func__);
-  checkValidity();
-  return m_lastTemp;
-}
-
-void InetWeather::checkValidity()
+void CovidDataApi::checkValidity()
 {
   if (!m_isValid || (millis() - m_lastReadTime > MIN_READ_INTERVAL))
   {
@@ -47,14 +40,14 @@ void InetWeather::checkValidity()
   }
 }
 
-void InetWeather::fetchWeather()
+void CovidDataApi::fetchWeather()
 {
   m_logger.printf("m_uriBuffer: %d\n", sizeof(m_uriBuffer));
-  m_logger.printf("YYYYYYYAHOO_WEATHER_URI: %d\n", std::strlen(YAHOO_WEATHER_URI));
+  m_logger.printf("YYYYYYYAHOO_WEATHER_URI: %d\n", std::strlen(CORONAVIRUS_TRACKER_URI));
 
   m_logger.println(__func__);
 
-  m_httpClient->begin(YAHOO_WEATHER_HOST, 80, m_uriBuffer);
+  m_httpClient->begin(CORONAVIRUS_TRACKER_HOST, 80, m_uriBuffer);
   m_httpClient->addHeader("Content-Type", "application/json");
   int httpCode = m_httpClient->GET();
   m_logger.printf("Http Status: %d\n", httpCode);
@@ -84,8 +77,8 @@ void InetWeather::fetchWeather()
   }
 }
 
-void InetWeather::prepareUri()
+void CovidDataApi::prepareUri()
 {
   m_logger.println(__func__);
-  url_encode(YAHOO_WEATHER_URI, m_uriBuffer);
+  url_encode(CORONAVIRUS_TRACKER_URI, m_uriBuffer);
 }

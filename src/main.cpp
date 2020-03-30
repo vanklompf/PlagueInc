@@ -9,7 +9,7 @@
 
 #include <Ticker.h>
 
-#include "InetWeather.h"
+#include "CovidDataApi.h"
 
 
 static const int GPIO_DHT_DATA = 5;
@@ -26,7 +26,7 @@ static const int TEMP_ERROR = 0xFFFF;
 
 static MDNSResponder mdns;
 
-static InetWeather inetWeather(Serial);
+static CovidDataApi inetWeather(Serial);
 static Print& logger = Serial;
 
 static TFT_eSPI tft;
@@ -59,7 +59,6 @@ void setup(void)
 
 void loop(void)
 {
-  uint8_t rot = 0;
   for (int i=0; i<100; i++)
   {
     checkWifi();
@@ -181,7 +180,7 @@ static void showCountryScreen(uint32_t bgColor, const char* countryName, int inf
   tft.setCursor(0, 0, 4);
   tft.println(countryName);
 
-  tft.setTextColor(TFT_BLACK, bgColor);  
+  tft.setTextColor(TFT_RED, bgColor);  
   tft.setTextFont(infected > 9999 ? 4 : 7);
 
   if (infected < 0)
